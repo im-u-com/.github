@@ -1,6 +1,6 @@
-# Community Health Files for the Im-U Project
+# Community Health Files for the im-u Project
 
-This directory contains files that help manage and standardize community contributions to the Im-U project. These include templates for issues and pull requests.
+This directory contains files that help manage and standardize community contributions to the im-u project. These include templates for issues and pull requests.
 
 ## Purpose
 

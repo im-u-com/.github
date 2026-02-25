@@ -1,5 +1,5 @@
 ## Brief overview
-This document outlines the "Don't Repeat Yourself" (DRY) principles for Im-U projects. It provides guidelines for creating reusable logic, components, and configurations to improve code maintainability and reduce redundancy.
+This document outlines the "Don't Repeat Yourself" (DRY) principles for im-u projects. It provides guidelines for creating reusable logic, components, and configurations to improve code maintainability and reduce redundancy.
 
 ## Core DRY Principles
 - **Extract Reusable Logic**: If a piece of code is used in three or more places, it should be extracted into a shared location like a custom hook or utility function.

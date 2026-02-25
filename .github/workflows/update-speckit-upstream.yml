@@ -122,8 +122,8 @@ jobs:
           \`\`\`
 
           ### Next steps
-          After merging this PR to \`main\`, the **sync-speckit** workflow will automatically propagate these changes to all repos (web-app, website, iac) via PRs.
+          After merging this PR to \`main\`, the **sync-speckit** workflow will automatically propagate these changes to all repos (agent, website, iac, kb) via PRs.
 
-          > Review the diff carefully — upstream changes may conflict with Im-U-specific customizations in templates or commands.
+          > Review the diff carefully — upstream changes may conflict with im-u-specific customizations in templates or commands.
           BODY
           )"

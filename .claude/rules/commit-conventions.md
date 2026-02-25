@@ -1,5 +1,5 @@
 ## Brief overview
-This document defines the commit message format for Im-U projects, following the Conventional Commits specification.
+This document defines the commit message format for im-u projects, following the Conventional Commits specification.
 
 ## Commit Message Format
 ```

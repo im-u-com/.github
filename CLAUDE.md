@@ -1,6 +1,6 @@
-# Im-U Organization Guide
+# im-u Organization Guide
 
-This is the **org-level** CLAUDE.md for the Im-U workspace. It defines cross-repo conventions, architecture, CI/CD pipelines, and the specification-driven development process.
+This is the **org-level** CLAUDE.md for the im-u workspace. It defines cross-repo conventions, architecture, CI/CD pipelines, and the specification-driven development process.
 
 **How this file works with repo-level files:**
 
@@ -19,16 +19,18 @@ This is the **org-level** CLAUDE.md for the Im-U workspace. It defines cross-rep
 
 | Repo | Stack | Purpose | Dev Command | Package Manager |
 |------|-------|---------|-------------|-----------------|
-| `website` | React, Vite, TypeScript | Marketing website | `npm run dev` | NPM |
-| `kb` | MkDocs Material, Python | Knowledge base — theory, architecture, research | `mkdocs serve` | Poetry |
+| `website` | React 19, Vite 6, TypeScript, Three.js | Marketing website | `npm run dev` | NPM |
+| `agent` | OpenClaw, Node.js | AI organizational consulting agent | N/A | NPM (global) |
+| `kb` | MkDocs Material, Python 3.12 | Knowledge base | `poetry run mkdocs serve` | Poetry |
+| `iac` | GitHub Actions YAML | Reusable CI/CD templates + GitOps | N/A | N/A |
 
 ### Repo Relationships
 
 ```mermaid
 graph TD
-    website["website<br/><small>marketing site</small>"] -->|links to| webapp["website<br/><small>Supabase auth</small>"]
-    iac -->|reusable workflows| webapp
+    website["website<br/><small>marketing site</small>"] -->|links to| agent["agent<br/><small>AI consulting</small>"]
     iac -->|reusable workflows| website
+    iac -->|reusable workflows| kb["kb<br/><small>knowledge base</small>"]
     iac -->|gitops manifests| argocd["ArgoCD"]
 ```
 
@@ -49,11 +51,11 @@ graph TD
 ```mermaid
 graph LR
     User -->|static marketing| website
-    User -->|auth via Supabase| webapp["website"]
+    User -->|AI consulting| agent["agent"]
 ```
 
-1. **Website**: Static marketing site at `imu.ai`. Links users to the web app.
-2. **Web-app**: Handles authentication (Supabase), main application UI at `webui.imu.app`.
+1. **Website**: Static marketing site at `imu.ai`. Links users to the agent.
+2. **Agent**: OpenClaw-based AI organizational consulting agent.
 
 ### Database Ownership
 
@@ -106,7 +108,7 @@ Examples:
 
 ### The Standard Pipeline
 
-All deployable repos (website, website) MUST implement this pipeline:
+All deployable repos (website, agent, kb) MUST implement this pipeline:
 
 | Event | Jobs | Artifact |
 |-------|------|----------|
@@ -135,17 +137,19 @@ iac/
   gitops/
     testing/
       website.yaml
-      website.yaml
+      openclaw-agent.yaml
+      kb.yaml
     production/
       website.yaml
-      website.yaml
+      openclaw-agent.yaml
+      kb.yaml
 ```
 
 Each file contains the image reference that ArgoCD reads:
 
 ```yaml
 image:
-  repository: docker.io/imu/website
+  repository: docker.io/setchevest/im-u-website
   tag: "<sha>"
 ```
 
@@ -176,32 +180,28 @@ Format:
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`
 
-Web-app and website use IAC's `pr-validation-template.yml`.
+Website and kb use IAC's `pr-validation-template.yml`.
 
 ### IAC Workflow Catalog
 
 | Template | Purpose | Consumers |
 |----------|---------|-----------|
-| `build-push-generic-template.yml` | Build, scan (Trivy), push Docker image to any registry | website, website |
-| `pr-validation-template.yml` | Conventional Commits validation on PRs (comment + optional blocking) | website, website |
-| `update-gitops-template.yml` | Dispatch `update-image-tag` event to IAC repo (consumer-facing) | website, website |
+| `build-push-generic-template.yml` | Build, scan (Trivy), push Docker image to any registry | website, kb |
+| `pr-validation-template.yml` | Conventional Commits validation on PRs (comment + optional blocking) | website, kb |
+| `update-gitops-template.yml` | Dispatch `update-image-tag` event to IAC repo (consumer-facing) | website, kb |
 | `gitops-webhook.yml` | Receive dispatch event, update gitops manifests, push (IAC-internal) | IAC (self) |
-| `webhook-notification.yml` | Notify webhook on CI failure | website, website |
-| `cleanup-dockerhub-template.yml` | Prune old Docker Hub image tags | website, website |
+| `webhook-notification.yml` | Notify webhook on CI failure | website, kb |
+| `cleanup-dockerhub-template.yml` | Prune old Docker Hub image tags | website, kb |
 
 ### Required Secrets per Repo
 
 | Secret | Purpose | Repos |
 |--------|---------|-------|
-| `IAC_REPO_TOKEN` | PAT to trigger `repository_dispatch` on IAC repo | website, website |
-| `DOCKERHUB_USERNAME` | Docker Hub registry username | website |
-| `DOCKERHUB_TOKEN` | Docker Hub registry password/token | website |
-| `DOCKER_REGISTRY_USERNAME` | Docker registry username (Docker Hub) | website |
-| `DOCKER_REGISTRY_PASSWORD` | Docker registry password/token (Docker Hub) | website |
-| `NOTIFY_WEBHOOK_URL` | Webhook URL for CI failure alerts | website, website |
+| `IAC_REPO_TOKEN` | PAT to trigger `repository_dispatch` on IAC repo | website, kb |
+| `DOCKERHUB_USERNAME` | Docker Hub registry username | website, kb |
+| `DOCKERHUB_TOKEN` | Docker Hub registry password/token | website, kb |
+| `NOTIFY_WEBHOOK_URL` | Webhook URL for CI failure alerts | website, kb |
 | `SYNC_TOKEN` | GitHub PAT for spec-kit sync workflow | .github |
-
-> **Note**: Web-app uses different secret names for Docker registry credentials (`DOCKER_REGISTRY_*` vs `DOCKERHUB_*`). Both point to Docker Hub.
 
 ---
 
@@ -212,7 +212,7 @@ Web-app and website use IAC's `pr-validation-template.yml`.
 
 [Spec-kit](https://github.com/github/spec-kit) provides a structured workflow for defining features as specifications before implementation. Specs live **in the feature branch** and are reviewed before code is written (shift-left review).
 
-**Integration scope**: All repos (website, website) + workspace root (cross-repo specs).
+**Integration scope**: All repos (website, agent, kb) + workspace root (cross-repo specs).
 
 ### Workflow
 
@@ -237,7 +237,7 @@ The org constitution lives in the `.github` repo at `.specify/memory/constitutio
 
 - Database schema changes (Supabase migrations)
 - New features requiring multiple acceptance scenarios
-- Cross-repo features (anything touching website + website)
+- Cross-repo features (anything touching multiple repos)
 
 ### When Specs Are NOT Required
 
@@ -256,7 +256,7 @@ For features within a single repo, specs live in the repo at `specs/###-feature-
 For features that span multiple repos:
 
 1. **Spec lives at workspace root**: `specs/###-feature-name/`
-2. **Tasks are tagged per repo**: `[WEB-APP]`, `[WEBSITE]`
+2. **Tasks are tagged per repo**: `[WEBSITE]`, `[AGENT]`, `[KB]`
 
 ### Branch Naming
 
@@ -374,13 +374,16 @@ The `@` references cause Claude to load the org-level rule files when working in
 
 ### Code Quality Tools by Stack
 
-**TypeScript repos** (website, website):
+**TypeScript repos** (website):
 
 - Formatter: Prettier
 - Linter: ESLint
 - TypeScript: strict mode enabled
-- Web-app: `pnpm lint:fix && pnpm format`
 - Website: `npm run lint`
+
+**Python repos** (kb):
+
+- Build: `poetry run mkdocs build --strict`
 
 ---
 
@@ -427,8 +430,8 @@ ADR format:
 
 | Repo | i18n Library | Translation Files |
 |------|-------------|-------------------|
-| website | next-intl | `website/messages/{en,es,fr,de}.json` |
 | website | i18next | `website/public/locales/{en,es,fr}/` |
+| agent | N/A | Bilingual (ES/EN) via SOUL.md persona |
 
 When adding a new translation key:
 
@@ -457,6 +460,7 @@ Fast lookup for key entry points (details in each repo's CLAUDE.md):
 
 | Repo | Main Entry | Config | Routes/Pages |
 |------|-----------|--------|--------------|
-| website | `src/app/[locale]/layout.tsx` | `next.config.ts` | `src/app/[locale]/` |
 | website | `src/index.tsx` | `src/vite.config.ts` | `src/pages/` |
+| agent | `workspace/SOUL.md` | `Dockerfile` | N/A |
+| kb | `docs/` | `mkdocs.yml` | `docs/` (content sections) |
 | iac | N/A | N/A | `.github/workflows/` |
