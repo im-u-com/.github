@@ -1,4 +1,4 @@
-# How to Contribute to Im-U
+# How to Contribute to im-u
 
 We're excited that you're interested in contributing! This document provides guidelines for contributing to our projects and explains how to use our issue and pull request templates.
 

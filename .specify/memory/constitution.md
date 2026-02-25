@@ -29,7 +29,7 @@
   Follow-up TODOs: none
 -->
 
-# Im-U Constitution
+# im-u Constitution
 
 ## Core Principles
 
@@ -42,7 +42,7 @@ acceptance criteria, functional requirements, and success metrics.
 Non-negotiable rules:
 
 - Database schema changes (Supabase migrations) MUST have a spec.
-- Cross-repo features (web-app + website) MUST have a spec.
+- Cross-repo features (across multiple repos) MUST have a spec.
 - New features requiring multiple acceptance scenarios MUST have a spec.
 
 Exceptions (specs NOT required):
@@ -76,7 +76,7 @@ Non-negotiable rules:
   (Encapsulation).
 - Leave code cleaner than you found it (Boy Scout Rule).
 
-Rationale: Im-U is a multi-repo, multi-stack organization. Code
+Rationale: im-u is a multi-repo, multi-stack organization. Code
 clarity is the primary defense against cross-repo cognitive overload.
 
 ### III. DRY (Don't Repeat Yourself)
@@ -124,7 +124,7 @@ Non-negotiable rules:
   when it exceeds what the constitution permits.
 
 Rationale: YAGNI prevents speculative engineering that increases
-maintenance cost without delivering value. Im-U's multi-repo
+maintenance cost without delivering value. im-u's multi-repo
 architecture already introduces inherent complexity — every unnecessary
 addition compounds it.
 
@@ -168,9 +168,8 @@ Non-negotiable rules:
 
 - Existing non-English documents MUST be translated and migrated as part
   of the knowledge base consolidation effort.
-- User-facing strings in web-app and website MUST be internationalized
-  using the project's i18n libraries (next-intl for web-app, i18next for
-  website).
+- User-facing strings in website MUST be internationalized
+  using the project's i18n library (i18next for website).
 - When adding a new i18n key, translations MUST be provided for ALL
   supported locales (en, es, fr).
 - Internal code, APIs, and documentation are English-only — i18n applies
@@ -182,15 +181,13 @@ enables unified search across the knowledge base.
 
 ## Cross-Repo Architecture Constraints
 
-Im-U comprises three repositories (web-app, website, iac) with
+im-u comprises four repositories (agent, website, iac, kb) with
 defined ownership boundaries. These constraints prevent architectural
 drift.
 
-- **Database ownership**: Supabase (PostgreSQL) is owned by web-app.
-  No repo may access another repo's database directly.
 - **Spec location**: Cross-repo feature specs live at the workspace root
   (`.specify/specs/<feature>/`). Tasks MUST be tagged per repo:
-  `[WEB-APP]`, `[WEBSITE]`.
+  `[AGENT]`, `[WEBSITE]`, `[KB]`.
 
 ## CI/CD & Deployment Standards
 
@@ -213,7 +210,7 @@ and follow GitOps deployment practices.
 
 ## Governance
 
-This constitution is the highest-authority document for Im-U
+This constitution is the highest-authority document for im-u
 development practices. It supersedes all other conventions, guides, and
 informal agreements.
 

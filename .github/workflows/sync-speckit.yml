@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: [iac, website, web-app]
+        repo: [iac, website, agent, kb]
     name: Sync to ${{ matrix.repo }}
 
     steps:

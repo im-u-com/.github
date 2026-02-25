@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sets up the Im-U development workspace
+# Sets up the im-u development workspace
 # Clones all repos as siblings under a common parent directory
 #
 # Usage:
@@ -11,14 +11,15 @@
 # Expected result:
 #   workspace_dir/
 #     .github/       <-- this repo (org-level CLAUDE.md, templates, profile)
-#     web-app/
+#     agent/
 #     website/
 #     iac/
+#     kb/
 
 set -euo pipefail
 
 ORG="im-u-com"
-REPOS=(".github" "web-app" "website" "iac")
+REPOS=(".github" "agent" "website" "iac" "kb")
 
 WORKSPACE_DIR="${1:-$(pwd)/imu}"
 mkdir -p "$WORKSPACE_DIR"
