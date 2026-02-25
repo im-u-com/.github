@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(.claude/rules/**)",
+      "Read(../.github/.claude/rules/**)"
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+name: "Spike"
+description: "A time-boxed investigation to resolve a technical or functional uncertainty."
+title: "[SPIKE]: "
+labels: ["spike", "research"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: "Research Objective"
+      description: "What question are we trying to answer? What is the goal of this investigation?"
+      placeholder: "e.g., Investigate if library X can solve problem Y."
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: "Expected Outcome"
+      description: "What is the deliverable? This is usually not production code."
+      placeholder: "e.g., A decision document, a simple proof-of-concept, a recommendation."
+    validations:
+      required: true
+
+  - type: input
+    id: timebox
+    attributes:
+      label: "Time-box"
+      description: "Set a strict time limit for this research."
+      placeholder: "e.g., 4 hours, 1 day."

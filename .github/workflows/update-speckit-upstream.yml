@@ -1,0 +1,129 @@
+name: Update Spec-Kit from Upstream
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Spec-kit version or branch to pull from (e.g., v0.0.96, main)'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    name: Pull upstream spec-kit ${{ inputs.version }}
+
+    steps:
+      - name: Checkout .github repo
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Clone upstream spec-kit
+        run: |
+          git clone --depth 1 --branch "${{ inputs.version }}" \
+            https://github.com/github/spec-kit.git /tmp/spec-kit
+
+      - name: Sync upstream files
+        run: |
+          # Sync templates (upstream templates/ -> .specify/templates/)
+          cp /tmp/spec-kit/templates/spec-template.md .specify/templates/
+          cp /tmp/spec-kit/templates/plan-template.md .specify/templates/
+          cp /tmp/spec-kit/templates/tasks-template.md .specify/templates/
+          cp /tmp/spec-kit/templates/checklist-template.md .specify/templates/
+          cp /tmp/spec-kit/templates/constitution-template.md .specify/templates/
+          cp /tmp/spec-kit/templates/agent-file-template.md .specify/templates/
+
+          # Sync scripts (upstream scripts/ -> .specify/scripts/bash/)
+          if [ -d /tmp/spec-kit/scripts/bash ]; then
+            cp /tmp/spec-kit/scripts/bash/*.sh .specify/scripts/bash/ 2>/dev/null || true
+          elif [ -d /tmp/spec-kit/scripts ]; then
+            cp /tmp/spec-kit/scripts/*.sh .specify/scripts/bash/ 2>/dev/null || true
+          fi
+          chmod +x .specify/scripts/bash/*.sh 2>/dev/null || true
+
+          # Sync command templates (upstream templates/commands/ -> .claude/commands/)
+          if [ -d /tmp/spec-kit/templates/commands ]; then
+            for cmd in /tmp/spec-kit/templates/commands/*.md; do
+              [ -f "$cmd" ] || continue
+              filename=$(basename "$cmd")
+              # Map upstream command names to our speckit.* naming convention
+              # e.g., specify.md -> speckit.specify.md
+              target_name="speckit.${filename}"
+              if [ -f ".claude/commands/${target_name}" ]; then
+                cp "$cmd" ".claude/commands/${target_name}"
+              fi
+            done
+          fi
+
+          # Record upstream version
+          echo "${{ inputs.version }}" > .specify/.upstream-version
+
+          echo "=== Upstream version: ${{ inputs.version }} ==="
+          echo "=== Changed files ==="
+          git diff --name-only
+          git status --short
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected — already up to date with upstream ${{ inputs.version }}"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="chore/update-speckit-upstream-${{ inputs.version }}"
+          # Sanitize branch name (replace invalid chars)
+          BRANCH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9._/-]/-/g')
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Clean up existing branch if present
+          git branch -D "$BRANCH" 2>/dev/null || true
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+
+          git checkout -b "$BRANCH"
+          git add .specify/ .claude/commands/speckit.*.md
+          git commit -m "chore(speckit): update spec-kit from upstream ${{ inputs.version }}
+
+          Pulled from https://github.com/github/spec-kit@${{ inputs.version }}"
+
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(speckit): update spec-kit from upstream ${{ inputs.version }}" \
+            --body "$(cat <<'BODY'
+          ## Summary
+
+          Updated spec-kit files from [upstream](https://github.com/github/spec-kit) version \`${{ inputs.version }}\`.
+
+          ### What this updates
+          - Templates (spec, plan, tasks, checklist, constitution, agent-file)
+          - Scripts (bash utilities)
+          - Command files (if upstream provides updated commands)
+
+          ### Changed files
+          \`\`\`
+          $(git diff --name-only HEAD~1)
+          \`\`\`
+
+          ### Next steps
+          After merging this PR to \`main\`, the **sync-speckit** workflow will automatically propagate these changes to all repos (web-app, website, iac) via PRs.
+
+          > Review the diff carefully — upstream changes may conflict with Im-U-specific customizations in templates or commands.
+          BODY
+          )"

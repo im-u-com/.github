@@ -1,0 +1,22 @@
+name: "Tech Task"
+description: "A technical task that is necessary for the project's health and maintainability."
+title: "[TECH]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: "What is the problem to solve?"
+      description: "Describe the technical need. Why is this task necessary?"
+      placeholder: "e.g., The current version of library Z has a known security issue and needs to be updated."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "How will we know this task is done?"
+      placeholder: "e.g., The library is updated, all tests pass, CI build is green."
+    validations:
+      required: true

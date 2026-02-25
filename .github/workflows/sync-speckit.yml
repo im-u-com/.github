@@ -1,0 +1,106 @@
+name: Sync Spec-Kit to Repos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.specify/**'
+      - '.claude/commands/speckit.*.md'
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [iac, website, web-app]
+    name: Sync to ${{ matrix.repo }}
+
+    steps:
+      - name: Checkout .github repo
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: im-u-com/${{ matrix.repo }}
+          token: ${{ secrets.SYNC_TOKEN }}
+          ref: develop
+          path: target
+
+      - name: Sync spec-kit files
+        run: |
+          # Sync org constitution (renamed to org-constitution.md in target)
+          cp source/.specify/memory/constitution.md target/.specify/memory/org-constitution.md
+
+          # Sync templates
+          mkdir -p target/.specify/templates
+          cp source/.specify/templates/*.md target/.specify/templates/
+
+          # Sync scripts
+          mkdir -p target/.specify/scripts/bash
+          cp source/.specify/scripts/bash/*.sh target/.specify/scripts/bash/
+          chmod +x target/.specify/scripts/bash/*.sh
+
+          # Sync commands
+          mkdir -p target/.claude/commands
+          cp source/.claude/commands/speckit.*.md target/.claude/commands/
+
+      - name: Check for changes
+        id: changes
+        working-directory: target
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changed files:"
+            git diff --name-only
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.has_changes == 'true'
+        working-directory: target
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          BRANCH="chore/sync-speckit"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Delete existing branch if it exists (force update)
+          git branch -D "$BRANCH" 2>/dev/null || true
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+
+          git checkout -b "$BRANCH"
+          git add .specify/ .claude/commands/speckit.*.md
+          git commit -m "chore(speckit): sync spec-kit files from org
+
+          Auto-synced from imu/.github@${{ github.sha }}"
+
+          git push -u origin "$BRANCH"
+
+          # Create PR (or update existing)
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --base develop \
+              --head "$BRANCH" \
+              --title "chore(speckit): sync spec-kit files from org" \
+              --body "## Summary
+          - Auto-synced spec-kit files from \`im-u-com/.github\`
+          - Source commit: im-u-com/.github@\`${{ github.sha }}\`
+
+          ### Changed files:
+          \`\`\`
+          $(git diff --name-only HEAD~1)
+          \`\`\`
+
+          > This PR was created automatically by the spec-kit sync workflow."
+          fi
