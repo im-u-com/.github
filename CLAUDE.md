@@ -30,6 +30,7 @@ This is the **org-level** CLAUDE.md for the im-u workspace. It defines cross-rep
 graph TD
     website["website<br/><small>marketing site</small>"] -->|links to| agent["agent<br/><small>AI consulting</small>"]
     iac -->|reusable workflows| website
+    iac -->|reusable workflows| agent
     iac -->|reusable workflows| kb["kb<br/><small>knowledge base</small>"]
     iac -->|gitops manifests| argocd["ArgoCD"]
 ```
@@ -180,27 +181,27 @@ Format:
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`
 
-Website and kb use IAC's `pr-validation-template.yml`.
+Website, agent, and kb use IAC's `pr-validation-template.yml`.
 
 ### IAC Workflow Catalog
 
 | Template | Purpose | Consumers |
 |----------|---------|-----------|
-| `build-push-generic-template.yml` | Build, scan (Trivy), push Docker image to any registry | website, kb |
-| `pr-validation-template.yml` | Conventional Commits validation on PRs (comment + optional blocking) | website, kb |
-| `update-gitops-template.yml` | Dispatch `update-image-tag` event to IAC repo (consumer-facing) | website, kb |
+| `build-push-generic-template.yml` | Build, scan (Trivy), push Docker image to any registry | website, agent, kb |
+| `pr-validation-template.yml` | Conventional Commits validation on PRs (comment + optional blocking) | website, agent, kb |
+| `update-gitops-template.yml` | Dispatch `update-image-tag` event to IAC repo (consumer-facing) | website, agent, kb |
 | `gitops-webhook.yml` | Receive dispatch event, update gitops manifests, push (IAC-internal) | IAC (self) |
-| `webhook-notification.yml` | Notify webhook on CI failure | website, kb |
+| `webhook-notification.yml` | Notify webhook on CI failure | website, agent, kb |
 | `cleanup-dockerhub-template.yml` | Prune old Docker Hub image tags | website, kb |
 
 ### Required Secrets per Repo
 
 | Secret | Purpose | Repos |
 |--------|---------|-------|
-| `IAC_REPO_TOKEN` | PAT to trigger `repository_dispatch` on IAC repo | website, kb |
-| `DOCKERHUB_USERNAME` | Docker Hub registry username | website, kb |
-| `DOCKERHUB_TOKEN` | Docker Hub registry password/token | website, kb |
-| `NOTIFY_WEBHOOK_URL` | Webhook URL for CI failure alerts | website, kb |
+| `IAC_REPO_TOKEN` | PAT to trigger `repository_dispatch` on IAC repo | website, agent, kb |
+| `DOCKERHUB_USERNAME` | Docker Hub registry username | website, agent, kb |
+| `DOCKERHUB_TOKEN` | Docker Hub registry password/token | website, agent, kb |
+| `NOTIFY_WEBHOOK_URL` | Webhook URL for CI failure alerts | website, agent, kb |
 | `SYNC_TOKEN` | GitHub PAT for spec-kit sync workflow | .github |
 
 ---
